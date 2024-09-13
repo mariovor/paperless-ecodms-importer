@@ -27,7 +27,7 @@ class Version:
 class ClassifyInfo:
     cla_docs_id: str
     revision_count: str
-    trashed: str
+    trashed: bool
     versions: List[Version] = field(default_factory=list)
 
 
@@ -79,7 +79,7 @@ def parse_classify_info(element: ET.Element) -> ClassifyInfo:
     return ClassifyInfo(
         cla_docs_id=element.attrib['cla_docs_id'],
         revision_count=element.attrib['revision_count'],
-        trashed=element.attrib['trashed'],
+        trashed=element.attrib['trashed']=='true',
         versions=versions
     )
 
