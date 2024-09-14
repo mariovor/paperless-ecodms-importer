@@ -10,10 +10,12 @@ Secondly, reading the EcoDMS backup might not work for you because of configurat
 **Supported**
 
 * Read your EcoDMS backup and upload files to paperless.
+* Metadata:
+  * Title
 
 **Not Supported**
 
-At the moment, no metadata is used from EcoDMS
+At the moment, no other metadata is used from EcoDMS.
 
 ## Prerequisites
 

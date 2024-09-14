@@ -8,6 +8,7 @@ from paperless_api import PaperlessAPI
 
 import logging
 
+logging.basicConfig(level=logging.INFO)
 LOGGER = logging.getLogger(__name__)
 
 ECODMS_PATH_EXPORT_FILE = os.getenv("ECODMS_PATH_EXPORT_FILE")
@@ -23,7 +24,8 @@ def to_paperless(ecodms_documents: [Document]) -> [PaperlessDocument]:
     paperless_documents = []
     for ecodms_document in ecodms_documents:
         paperless_documents.append(PaperlessDocument(
-            filepath=export_archive_path.joinpath(ecodms_document.files[0].filePath)
+            filepath=export_archive_path.joinpath(ecodms_document.files[0].filePath),
+            title=ecodms_document.classifyInfos[0].versions[0].bemerkung
         ))
 
     return paperless_documents

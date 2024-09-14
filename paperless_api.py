@@ -26,7 +26,9 @@ class PaperlessAPI:
         """
         Upload a PaperlessDocument to paperless.
         """
-        payload = self._preprare_payload()
+        payload = self._preprare_payload(
+            title=document.title,
+        )
         response = self._upload(document.filepath, payload)
         LOGGER.info(f'Response is: {response}')
 
