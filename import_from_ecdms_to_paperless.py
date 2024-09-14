@@ -1,17 +1,43 @@
 import os
 import xml.etree.ElementTree as ET
+from pathlib import Path
 
-from ecodms import parse_documents
+from ecodms import parse_documents, Document
+from paperless import PaperlessDocument
+from paperless_api import PaperlessAPI
 
-PATH_ECODMS_EXPORT_FILE = os.getenv("PATH_ECODMS_EXPORT_FILE")
+import logging
+
+LOGGER = logging.getLogger(__name__)
+
+ECODMS_PATH_EXPORT_FILE = os.getenv("ECODMS_PATH_EXPORT_FILE")
+PAPERLESS_API_URL = os.getenv("PAPERLESS_API_URL")
+PAPERLESS_TOKEN = os.getenv("PAPERLESS_TOKEN")
+
+# Limit the number of uploads while still WIP
+LIMIT_UPLOAD = 5
+
+def to_paperless(ecodms_documents: [Document]) -> [PaperlessDocument]:
+    export_file_path = Path(ECODMS_PATH_EXPORT_FILE)
+    export_archive_path = export_file_path.parent
+    paperless_documents = []
+    for ecodms_document in ecodms_documents:
+        paperless_documents.append(PaperlessDocument(
+            filepath=export_archive_path.joinpath(ecodms_document.files[0].filePath)
+        ))
+
+    return paperless_documents
 
 if __name__ == "__main__":
-    print(f"Path to EcoDMS export file {PATH_ECODMS_EXPORT_FILE}")
+    LOGGER.info(f"Path to EcoDMS export file {ECODMS_PATH_EXPORT_FILE}")
     # Parse the XML file
-    tree = ET.parse(PATH_ECODMS_EXPORT_FILE)
+    tree = ET.parse(ECODMS_PATH_EXPORT_FILE)
     root_element = tree.getroot()
 
     # Convert to dataclass
     documents_data = parse_documents(root_element)
-    print(documents_data)
-    i = 42
+    paperless_docs = to_paperless(documents_data.documents)
+
+    # Upload
+    api = PaperlessAPI(PAPERLESS_TOKEN, PAPERLESS_API_URL)
+    api.upload_documents(paperless_docs[:LIMIT_UPLOAD])

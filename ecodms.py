@@ -2,6 +2,10 @@ from dataclasses import dataclass, field
 from typing import Optional, List
 from xml.etree import ElementTree as ET
 
+"""
+Parse XML from EcoDMS to DTOs.
+Warning: This structure might be highly customized to the needs of the original author.  
+"""
 
 @dataclass
 class Version:
