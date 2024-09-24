@@ -1,12 +1,12 @@
 from pathlib import Path
+from time import sleep
 
 import requests
 
 from paperless import PaperlessDocument
+from utils import MigrationLogger
 
-from logging import getLogger
-
-LOGGER = getLogger(__name__)
+logger = MigrationLogger.get_logger()
 
 
 class PaperlessAPI:
@@ -29,8 +29,9 @@ class PaperlessAPI:
         payload = self._preprare_payload(
             title=document.title,
         )
+        logger.info(f'Uploading document "{document.title}"')
         response = self._upload(document.filepath, payload)
-        LOGGER.info(f'Response is: {response}')
+        self._wait_upload_done(response)
 
     def _preprare_payload(self,
                           title=None,
@@ -88,10 +89,27 @@ class PaperlessAPI:
             }
 
             # Send the POST request
-            response = requests.post(f'{self.api_url}/documents/post_document/', headers=self.authentication_header, files=files, data=payload)
+            response = requests.post(f'{self.api_url}/documents/post_document/', headers=self.authentication_header,
+                                     files=files, data=payload)
 
         # Check if the request was successful
         if response.status_code == 200:
             return response.json()  # Return the UUID of the consumption task
         else:
             return f"Failed to upload document. Status Code: {response.status_code}, Response: {response.text}"
+
+    def _wait_upload_done(self, uuid: str) -> bool:
+        success = None
+        while not success:
+            response = requests.get(f'{self.api_url}/tasks/?task_id={uuid}', headers=self.authentication_header)
+            status = response.json()[0]['status']
+            logger.info(f'Job {uuid} is in status {status}')
+            if status == 'SUCCESS':
+                success = True
+                break
+            elif status == 'FAILURE':
+                success = False
+                break
+            else:
+                sleep(10)
+        return success

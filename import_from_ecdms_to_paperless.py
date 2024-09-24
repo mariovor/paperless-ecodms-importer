@@ -5,11 +5,9 @@ from pathlib import Path
 from ecodms import parse_documents, Document
 from paperless import PaperlessDocument
 from paperless_api import PaperlessAPI
+from utils import MigrationLogger
 
-import logging
-
-logging.basicConfig(level=logging.INFO)
-LOGGER = logging.getLogger(__name__)
+logger = MigrationLogger.get_logger()
 
 ECODMS_PATH_EXPORT_FILE = os.getenv("ECODMS_PATH_EXPORT_FILE")
 PAPERLESS_API_URL = os.getenv("PAPERLESS_API_URL")
@@ -31,7 +29,7 @@ def to_paperless(ecodms_documents: [Document]) -> [PaperlessDocument]:
     return paperless_documents
 
 if __name__ == "__main__":
-    LOGGER.info(f"Path to EcoDMS export file {ECODMS_PATH_EXPORT_FILE}")
+    logger.info(f"Path to EcoDMS export file {ECODMS_PATH_EXPORT_FILE}")
     # Parse the XML file
     tree = ET.parse(ECODMS_PATH_EXPORT_FILE)
     root_element = tree.getroot()
