@@ -7,3 +7,4 @@ class PaperlessDocument:
     filepath: Path
     title: str = None
     created: str = None
+    folder: str = None
