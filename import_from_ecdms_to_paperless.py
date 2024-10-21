@@ -25,7 +25,8 @@ def to_paperless(ecodms_documents: [Document]) -> [PaperlessDocument]:
         paperless_documents.append(PaperlessDocument(
             filepath=export_archive_path.joinpath(ecodms_document.files[0].filePath),
             title=version.bemerkung,
-            created=version.datum
+            created=version.datum,
+            folder=version.hauptordner
         ))
 
     return paperless_documents

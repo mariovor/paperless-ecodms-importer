@@ -13,6 +13,7 @@ Secondly, reading the EcoDMS backup might not work for you because of configurat
 * Metadata:
   * Title
   * Create date
+  * Folder (as tag)
 
 **Not Supported**
 

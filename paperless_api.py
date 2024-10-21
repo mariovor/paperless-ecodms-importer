@@ -14,6 +14,48 @@ class PaperlessAPI:
     def __init__(self, token: str, api_url: str):
         self.authentication_header = {'Authorization': f'Token {token}'}
         self.api_url = api_url
+        self.tags = {}
+
+        self._retrieve_tags()
+
+    def _retrieve_tags(self):
+        """
+        Update internal dict of tags from paperless server
+        """
+        tags_response = requests.get(f'{self.api_url}/tags/', headers=self.authentication_header)
+        tags = {}
+        for tag in tags_response.json()['results']:
+            tags[tag['name']] = int(tag['id'])
+        logger.debug(f'Updating tags with {tags}')
+        self.tags = tags
+
+    def add_tag(self, tag: str):
+        """
+        Adds a new tag to the server. Updates after successful action he internal dict of tags.
+        :param tag: The tag name
+        """
+        data = {'name': tag}
+        response = requests.post(f'{self.api_url}/tags/', headers=self.authentication_header,
+                                 json=data)
+        if response.status_code == 201:
+            self._retrieve_tags()
+            logger.info(f'Successfully added tag {tag}')
+        else:
+            raise RuntimeError(f'Failed to add tag {tag} with code {response.status_code} / reason {response.reason}')
+
+    def get_or_create_tag_id(self, tag: str) -> int:
+        """
+        Return the id of tag.
+        If it does not exist, it will be created.
+        :param tag: The tag name
+        :return: The id of tag
+        """
+        if tag not in self.tags:
+            self.add_tag(tag)
+            self.get_or_create_tag_id(tag)
+        else:
+            return  self.tags[tag]
+
 
     def upload_documents(self, documents: [PaperlessDocument]) -> None:
         """
@@ -26,8 +68,13 @@ class PaperlessAPI:
         """
         Upload a PaperlessDocument to paperless.
         """
+        tags = []
+        tags.append(self.get_or_create_tag_id(document.folder))
+
         payload = self._preprare_payload(
             title=document.title,
+            tags=tags,
+            created=document.created
         )
         logger.info(f'Uploading document "{document.title}"')
         response = self._upload(document.filepath, payload)
@@ -113,3 +160,4 @@ class PaperlessAPI:
             else:
                 sleep(10)
         return success
+
