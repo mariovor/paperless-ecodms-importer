@@ -6,3 +6,4 @@ from pathlib import Path
 class PaperlessDocument:
     filepath: Path
     title: str = None
+    created: str = None

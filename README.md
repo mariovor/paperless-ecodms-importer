@@ -12,6 +12,7 @@ Secondly, reading the EcoDMS backup might not work for you because of configurat
 * Read your EcoDMS backup and upload files to paperless.
 * Metadata:
   * Title
+  * Create date
 
 **Not Supported**
 

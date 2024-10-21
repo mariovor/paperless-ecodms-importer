@@ -21,9 +21,11 @@ def to_paperless(ecodms_documents: [Document]) -> [PaperlessDocument]:
     export_archive_path = export_file_path.parent
     paperless_documents = []
     for ecodms_document in ecodms_documents:
+        version = ecodms_document.classifyInfos[0].versions[0]
         paperless_documents.append(PaperlessDocument(
             filepath=export_archive_path.joinpath(ecodms_document.files[0].filePath),
-            title=ecodms_document.classifyInfos[0].versions[0].bemerkung
+            title=version.bemerkung,
+            created=version.datum
         ))
 
     return paperless_documents
