@@ -68,8 +68,9 @@ class PaperlessAPI:
         """
         Upload a PaperlessDocument to paperless.
         """
-        tags = []
-        tags.append(self.get_or_create_tag_id(document.folder))
+        tags = [self.get_or_create_tag_id(document.folder)]
+        if document.tax_relevant:
+            tags.append(self.get_or_create_tag_id('Steuerrelevant'))
 
         payload = self._preprare_payload(
             title=document.title,

@@ -9,3 +9,4 @@ class PaperlessDocument:
     created: str = None
     folder: str = None
     asn: int = None
+    tax_relevant: bool = None

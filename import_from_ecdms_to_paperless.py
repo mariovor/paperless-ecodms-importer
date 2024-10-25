@@ -28,6 +28,7 @@ def to_paperless(ecodms_documents: [Document]) -> [PaperlessDocument]:
             created=version.datum,
             folder=version.hauptordner,
             asn=int(float(version.laufende_nummer)) if version.laufende_nummer != 'null' else None,
+            tax_relevant=True if version.steuerrelevant=='0' or version.steuerrelevant=='2' else False,
         ))
 
     return paperless_documents
