@@ -8,3 +8,4 @@ class PaperlessDocument:
     title: str = None
     created: str = None
     folder: str = None
+    asn: int = None

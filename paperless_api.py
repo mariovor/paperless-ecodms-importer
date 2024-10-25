@@ -74,7 +74,8 @@ class PaperlessAPI:
         payload = self._preprare_payload(
             title=document.title,
             tags=tags,
-            created=document.created
+            created=document.created,
+            archive_serial_number=document.asn
         )
         logger.info(f'Uploading document "{document.title}"')
         response = self._upload(document.filepath, payload)
