@@ -13,9 +13,6 @@ ECODMS_PATH_EXPORT_FILE = os.getenv("ECODMS_PATH_EXPORT_FILE")
 PAPERLESS_API_URL = os.getenv("PAPERLESS_API_URL")
 PAPERLESS_TOKEN = os.getenv("PAPERLESS_TOKEN")
 
-# Limit the number of uploads while still WIP
-LIMIT_UPLOAD = 5
-
 def to_paperless(ecodms_documents: [Document]) -> [PaperlessDocument]:
     export_file_path = Path(ECODMS_PATH_EXPORT_FILE)
     export_archive_path = export_file_path.parent
@@ -45,4 +42,4 @@ if __name__ == "__main__":
 
     # Upload
     api = PaperlessAPI(PAPERLESS_TOKEN, PAPERLESS_API_URL)
-    api.upload_documents(paperless_docs[:LIMIT_UPLOAD])
+    api.upload_documents(paperless_docs)
