@@ -10,40 +10,77 @@ TAX_RELEVANT = 'Steuerrelevant'
 
 logger = MigrationLogger.get_logger()
 
+class AttributeTypes:
+    """
+    Paperless document attributes which can be updated and retrieved from server
+    """
+    TAGS = 'tags'
+    DOCUMENT_TYPES = 'document_types'
+
 
 class PaperlessAPI:
 
     def __init__(self, token: str, api_url: str):
         self.authentication_header = {'Authorization': f'Token {token}'}
         self.api_url = api_url
-        self.tags = {}
+        self.tags = self._retrieve_tags()
+        self.document_types = self._retrieve_document_types()
 
-        self._retrieve_tags()
 
-    def _retrieve_tags(self):
+    def _retrieve_tags(self) -> dict:
         """
-        Update internal dict of tags from paperless server
+        Retrieve tags from paperless server
         """
-        tags_response = requests.get(f'{self.api_url}/tags/', headers=self.authentication_header)
-        tags = {}
-        for tag in tags_response.json()['results']:
-            tags[tag['name']] = int(tag['id'])
-        logger.debug(f'Updating tags with {tags}')
-        self.tags = tags
+        return self._retrieve_attributes(AttributeTypes.TAGS)
+
+
+    def _retrieve_document_types(self) -> dict:
+        """
+        Retrieve document types from paperless server
+        """
+        return self._retrieve_attributes(AttributeTypes.DOCUMENT_TYPES)
+
+    def _retrieve_attributes(self, attribute_type: str) -> dict:
+        """
+        Update dict with content of attribute_type from paperless server
+        """
+        attributes_response = requests.get(f'{self.api_url}/{attribute_type}/', headers=self.authentication_header)
+        attributes = {}
+        for attribute in attributes_response.json()['results']:
+            attributes[attribute['name']] = int(attribute['id'])
+        logger.debug(f'Updating attribute with {attributes}')
+
+        return attributes
 
     def add_tag(self, tag: str):
         """
-        Adds a new tag to the server. Updates after successful action he internal dict of tags.
+        Add tag to server. Updates after successful action he internal dict of tags.
         :param tag: The tag name
         """
-        data = {'name': tag}
-        response = requests.post(f'{self.api_url}/tags/', headers=self.authentication_header,
+        self._add_attribute(AttributeTypes.TAGS, tag)
+        self.tags = self._retrieve_tags()
+
+    def add_document_types(self, document_type: str):
+        """
+        Add document type to server. Updates after successful action he internal dict of tags.
+        :param document_type: The document type to be added.
+        """
+        self._add_attribute(AttributeTypes.DOCUMENT_TYPES, document_type)
+        self.document_types = self._retrieve_document_types()
+
+    def _add_attribute(self, attribute_type: str, attribute_value: str):
+        """
+        Adds a new attribute to the server.
+        :param attribute_type: The element type to be added. Must be a valid paperless element, like 'tags'.
+        :param attribute_value: The value of the element type to be added
+        """
+        data = {'name': attribute_value}
+        response = requests.post(f'{self.api_url}/{attribute_type}/', headers=self.authentication_header,
                                  json=data)
         if response.status_code == 201:
-            self._retrieve_tags()
-            logger.info(f'Successfully added tag {tag}')
+            logger.info(f'Successfully added {attribute_value} to {attribute_type}')
         else:
-            raise RuntimeError(f'Failed to add tag {tag} with code {response.status_code} / reason {response.reason}')
+            raise RuntimeError(f'Failed to add  {attribute_value} to {attribute_type} with code {response.status_code} / reason {response.reason}')
 
     def get_or_create_tag_id(self, tag: str) -> int:
         """
@@ -54,9 +91,22 @@ class PaperlessAPI:
         """
         if tag not in self.tags:
             self.add_tag(tag)
-            self.get_or_create_tag_id(tag)
+            return self.get_or_create_tag_id(tag)
         else:
             return  self.tags[tag]
+
+    def get_or_create_document_type_id(self, document_type: str) -> int:
+        """
+        Return the id of document_type.
+        If it does not exist, it will be created.
+        :param document_type: The document_type name
+        :return: The id of tag
+        """
+        if document_type not in self.document_types:
+            self.add_document_types(document_type)
+            return self.get_or_create_document_type_id(document_type)
+        else:
+            return  self.document_types[document_type]
 
 
     def upload_documents(self, documents: [PaperlessDocument]) -> None:
@@ -71,6 +121,9 @@ class PaperlessAPI:
         Upload a PaperlessDocument to paperless.
         """
         tags = [self.get_or_create_tag_id(document.folder)]
+        document_types = [self.get_or_create_document_type_id(document.document_type)]
+
+        # Special handling for workflow of original author
         if document.tax_relevant:
             tags.append(self.get_or_create_tag_id(TAX_RELEVANT))
 
@@ -78,7 +131,8 @@ class PaperlessAPI:
             title=document.title,
             tags=tags,
             created=document.created,
-            archive_serial_number=document.asn
+            archive_serial_number=document.asn,
+            document_type=document_types
         )
         logger.info(f'Uploading document "{document.title}"')
         response = self._upload(document.filepath, payload)

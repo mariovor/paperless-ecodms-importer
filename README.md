@@ -14,6 +14,7 @@ Secondly, reading the EcoDMS backup might not work for you because of configurat
   * Title
   * Create date
   * Folder (as tag)
+  * Document Type
   * Archive number
   * Tax relevance (as tag)
 

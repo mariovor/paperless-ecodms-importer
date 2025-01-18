@@ -10,3 +10,4 @@ class PaperlessDocument:
     folder: str = None
     asn: int = None
     tax_relevant: bool = None
+    document_type: str = None
