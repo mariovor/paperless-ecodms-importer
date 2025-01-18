@@ -121,9 +121,7 @@ class PaperlessAPI:
         if custom_fields:
             payload['custom_fields'] = custom_fields
         if tags:
-            # Add each tag as a separate entry
-            for tag in tags:
-                payload['tags'] = tag
+           payload['tags'] = tags
 
         return payload
 
