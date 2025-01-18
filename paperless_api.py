@@ -6,6 +6,8 @@ import requests
 from paperless import PaperlessDocument
 from utils import MigrationLogger
 
+TAX_RELEVANT = 'Steuerrelevant'
+
 logger = MigrationLogger.get_logger()
 
 
@@ -70,7 +72,7 @@ class PaperlessAPI:
         """
         tags = [self.get_or_create_tag_id(document.folder)]
         if document.tax_relevant:
-            tags.append(self.get_or_create_tag_id('Steuerrelevant'))
+            tags.append(self.get_or_create_tag_id(TAX_RELEVANT))
 
         payload = self._preprare_payload(
             title=document.title,
