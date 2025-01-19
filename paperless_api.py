@@ -1,3 +1,5 @@
+import json
+from datetime import datetime
 from pathlib import Path
 from time import sleep
 
@@ -7,8 +9,10 @@ from paperless import PaperlessDocument
 from utils import MigrationLogger
 
 TAX_RELEVANT = 'Steuerrelevant'
+EXECUTED_LOG = 'executed.json'
 
 logger = MigrationLogger.get_logger()
+
 
 class AttributeTypes:
     """
@@ -26,13 +30,11 @@ class PaperlessAPI:
         self.tags = self._retrieve_tags()
         self.document_types = self._retrieve_document_types()
 
-
     def _retrieve_tags(self) -> dict:
         """
         Retrieve tags from paperless server
         """
         return self._retrieve_attributes(AttributeTypes.TAGS)
-
 
     def _retrieve_document_types(self) -> dict:
         """
@@ -80,7 +82,8 @@ class PaperlessAPI:
         if response.status_code == 201:
             logger.info(f'Successfully added {attribute_value} to {attribute_type}')
         else:
-            raise RuntimeError(f'Failed to add  {attribute_value} to {attribute_type} with code {response.status_code} / reason {response.reason}')
+            raise RuntimeError(
+                f'Failed to add  {attribute_value} to {attribute_type} with code {response.status_code} / reason {response.reason}')
 
     def get_or_create_tag_id(self, tag: str) -> int:
         """
@@ -93,7 +96,7 @@ class PaperlessAPI:
             self.add_tag(tag)
             return self.get_or_create_tag_id(tag)
         else:
-            return  self.tags[tag]
+            return self.tags[tag]
 
     def get_or_create_document_type_id(self, document_type: str) -> int:
         """
@@ -106,8 +109,7 @@ class PaperlessAPI:
             self.add_document_types(document_type)
             return self.get_or_create_document_type_id(document_type)
         else:
-            return  self.document_types[document_type]
-
+            return self.document_types[document_type]
 
     def upload_documents(self, documents: [PaperlessDocument]) -> None:
         """
@@ -120,6 +122,10 @@ class PaperlessAPI:
         """
         Upload a PaperlessDocument to paperless.
         """
+        if not self.is_document_new(str(document.filepath)):
+            logger.info(f"Skipping {document.filepath}! Has been already uploaded in the past")
+            return None
+
         tags = [self.get_or_create_tag_id(document.folder)]
         document_types = [self.get_or_create_document_type_id(document.document_type)]
 
@@ -137,6 +143,7 @@ class PaperlessAPI:
         logger.info(f'Uploading document "{document.title}"')
         response = self._upload(document.filepath, payload)
         self._wait_upload_done(response)
+        self.write_executed(str(document.filepath))
 
     def _preprare_payload(self,
                           title=None,
@@ -177,7 +184,7 @@ class PaperlessAPI:
         if custom_fields:
             payload['custom_fields'] = custom_fields
         if tags:
-           payload['tags'] = tags
+            payload['tags'] = tags
 
         return payload
 
@@ -217,3 +224,42 @@ class PaperlessAPI:
                 sleep(10)
         return success
 
+    def is_document_new(self, file_name: str) -> bool:
+        """
+        Check if file_name has been executed in the past
+        :param file_name: The file name
+        :return:
+        """
+        executed_log = self._read_executed_log_from_file_system()
+        return file_name not in executed_log.keys()
+
+    def _read_executed_log_from_file_system(self) -> dict:
+        """
+        Read the execution log from file system.
+        Return empty one if file does not exist.
+        :return:Execution log as dict
+        """
+        try:
+            with open(EXECUTED_LOG, 'r') as f:
+                executed_log = json.load(f)
+        except FileNotFoundError:
+            logger.info(f'Could not decode execution log under {EXECUTED_LOG}. Assuming is empty.')
+            return {}
+        return executed_log
+
+    def _write_executed_log_to_file_system(self, log: dict):
+        """
+        Write a new execution log to file system.
+        :param log: The content of the log
+        """
+        with open(EXECUTED_LOG, 'w') as f:
+            json.dump(log, f)
+
+    def write_executed(self, file_name: str):
+        """
+        Append the exeucution log with the entry.
+        :param file_name: The used file name
+        """
+        executed_log = self._read_executed_log_from_file_system()
+        executed_log[file_name] = datetime.now().isoformat()
+        self._write_executed_log_to_file_system(executed_log)
