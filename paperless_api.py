@@ -8,6 +8,8 @@ import requests
 from paperless import PaperlessDocument
 from utils import MigrationLogger
 
+SOURCE_SYSTEM_TAG = 'EcoDMS'
+
 TAX_RELEVANT = 'Steuerrelevant'
 EXECUTED_LOG = 'executed.json'
 
@@ -126,7 +128,7 @@ class PaperlessAPI:
             logger.info(f"Skipping {document.filepath}! Has been already uploaded in the past")
             return None
 
-        tags = [self.get_or_create_tag_id(document.folder)]
+        tags = [self.get_or_create_tag_id(document.folder), self.get_or_create_tag_id(SOURCE_SYSTEM_TAG)]
         document_types = [self.get_or_create_document_type_id(document.document_type)]
 
         # Special handling for workflow of original author
