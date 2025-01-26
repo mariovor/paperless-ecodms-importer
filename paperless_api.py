@@ -49,6 +49,20 @@ class PaperlessAPI:
         Update dict with content of attribute_type from paperless server
         """
         attributes_response = requests.get(f'{self.api_url}/{attribute_type}/', headers=self.authentication_header)
+        attributes = self._extract_attributes_from_response(attributes_response)
+        logger.debug(f'Updating attribute with {attributes}')
+        while attributes_response.json()['next']:
+            attributes_response = requests.get(attributes_response.json()['next'], headers=self.authentication_header)
+            attributes.update(self._extract_attributes_from_response(attributes_response))
+
+        return attributes
+
+    def _extract_attributes_from_response(self, attributes_response) -> dict:
+        """
+        Extract attributes from the response of Paperless API
+        :param attributes_response: The response
+        :return: A dict containing attribute and its internal paperless id.
+        """
         attributes = {}
         for attribute in attributes_response.json()['results']:
             attributes[attribute['name']] = int(attribute['id'])
