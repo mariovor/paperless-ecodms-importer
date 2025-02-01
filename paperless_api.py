@@ -66,8 +66,6 @@ class PaperlessAPI:
         attributes = {}
         for attribute in attributes_response.json()['results']:
             attributes[attribute['name']] = int(attribute['id'])
-        logger.debug(f'Updating attribute with {attributes}')
-
         return attributes
 
     def add_tag(self, tag: str):
@@ -228,16 +226,20 @@ class PaperlessAPI:
         success = None
         while not success:
             response = requests.get(f'{self.api_url}/tasks/?task_id={uuid}', headers=self.authentication_header)
-            status = response.json()[0]['status']
-            logger.info(f'Job {uuid} is in status {status}')
-            if status == 'SUCCESS':
-                success = True
-                break
-            elif status == 'FAILURE':
-                success = False
-                break
+            if response.json():
+                status = response.json()[0]['status']
+                logger.info(f'Job {uuid} is in status {status}')
+                if status == 'SUCCESS':
+                    success = True
+                    break
+                elif status == 'FAILURE':
+                    success = False
+                    break
+                else:
+                    sleep(10)
             else:
-                sleep(10)
+                logger.info(f'Upload failed. Maybe not PDF')
+                break
         return success
 
     def is_document_new(self, file_name: str) -> bool:
