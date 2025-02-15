@@ -3,7 +3,8 @@
 
 ## What can it do?
 
-First, take into account that **THIS IS IN DEVELOPMENT AND WORK IN PROGRESS**. 
+First, take into account that this script was a one-shot and used for my migration from EcoDMS to paperless.
+The migration has been completed. 
 
 Secondly, reading the EcoDMS backup might not work for you because of configuration differences between EcoDMS instances.
 
